@@ -6,7 +6,10 @@ class HomePage:
     def __init__(self, root, database):
         self.root = root
         self.database = database
-        self.root.title("Головна сторінка")
+        self.root.title("Меню")
+
+        self.label = ttk.Label(root, text="Профспілкова система", font=("Lucida Console", 14, "italic"))
+        self.label.pack(pady=20)
 
         self.members_button = ttk.Button(root, text="Члени профспілки", command=self.open_members_page)
         self.members_button.pack(pady=20)

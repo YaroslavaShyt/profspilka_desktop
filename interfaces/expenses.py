@@ -14,6 +14,9 @@ class ExpensesInterface:
         self.root.title("Витрати профкому")
         Session = sessionmaker(bind=self.database.engine)
         self.session = Session()
+       # self.root.configure(bg='#0d1d1f')
+        style = ttk.Style()
+        style.configure('Green.TButton', background='DeepSkyBlue')  # Колір тексту та кнопок
 
         self.load_data()
         self.table_label = ttk.Label(root, text="Витрати")
@@ -22,20 +25,20 @@ class ExpensesInterface:
         self.options_label = ttk.Label(root, text="Меню")
         self.options_label.grid(row=0, column=1, pady=10)
 
-        self.sort_combobox = ttk.Combobox(root, values=['Рік', 'Сума'])
+        self.sort_combobox = ttk.Combobox(root, values=['Рік', 'Сума'], style="Green.TButton")
         self.sort_combobox.grid(row=1, column=1, padx=5, pady=5)
         self.sort_combobox.current(0)
         self.sort_combobox.bind("<<ComboboxSelected>>", self.sort_table)
 
-        self.delete_button = ttk.Button(root, text="Видалити", command=self.delete_expense)
+        self.delete_button = ttk.Button(root, text="Видалити", command=self.delete_expense, style="Green.TButton")
         self.delete_button.grid(row=2, column=1, padx=5, pady=5)
 
-        self.add_button = ttk.Button(root, text="Додати", command=self.add_expense)
+        self.add_button = ttk.Button(root, text="Додати", command=self.add_expense, style="Green.TButton")
         self.add_button.grid(row=1, column=2, padx=5, pady=5)
 
         self.display_table(self.expenses_df)
 
-        self.plot_button = ttk.Button(root, text="Побудувати графік", command=self.generate_plot)
+        self.plot_button = ttk.Button(root, text="Побудувати графік", command=self.generate_plot, style="Green.TButton")
         self.plot_button.grid(row=2, column=2, columnspan=4, padx=10, pady=10)
 
     def load_data(self):
@@ -54,7 +57,7 @@ class ExpensesInterface:
         self.display_table(self.expenses_df)
 
     def display_table(self, data):
-        self.table_frame = ttk.Frame(self.root, width=50)
+        self.table_frame = ttk.Frame(self.root, width=50, style="Green.TButton")
         self.table_frame.grid(row=1, column=0, columnspan=1, rowspan=10, sticky="nsew")
         self.tree = ttk.Treeview(self.table_frame,
                                  columns=['Expense ID', 'Name', 'Surname', 'Faculty', 'Amount', 'Purpose', 'Year'],
