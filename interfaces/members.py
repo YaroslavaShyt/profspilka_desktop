@@ -5,26 +5,37 @@ from sqlalchemy.orm import sessionmaker
 from database.connection_engine import Database
 from database.tables import *
 
+
 class MembersInterface:
     def __init__(self, root, database):
         self.root = root
         self.database = database
-        self.root.title("Відображення членів")
+        self.root.title("Система профкому")
         Session = sessionmaker(bind=self.database.engine)
         self.session = Session()
 
         self.load_data()
+        self.table_label = ttk.Label(root, text="Члени профкому")
+        self.table_label.grid(row=0, column=0, pady=10)
+
+        self.options_label = ttk.Label(root, text="Меню")
+        self.options_label.grid(row=0, column=1, columnspan=3, pady=10)
 
         self.role_combobox = ttk.Combobox(root, values=self.role_options)
-        self.role_combobox.grid(row=0, column=0, padx=10, pady=10)
+        self.role_combobox.grid(row=1, column=2, padx=5, pady=5)
         self.role_combobox.current(0)
         self.role_combobox.bind("<<ComboboxSelected>>", self.update_table)
 
+        self.faculty_combobox = ttk.Combobox(root, values=self.faculties_options)
+        self.faculty_combobox.grid(row=2, column=2, padx=5, pady=5)
+        self.faculty_combobox.current(0)
+        self.faculty_combobox.bind("<<ComboboxSelected>>", self.update_table)
+
         self.delete_button = ttk.Button(root, text="Видалити", command=self.delete_member)
-        self.delete_button.grid(row=0, column=1, padx=10, pady=10)
+        self.delete_button.grid(row=1, column=3, padx=5, pady=5)
 
         self.add_button = ttk.Button(root, text="Додати", command=self.add_member)
-        self.add_button.grid(row=0, column=2, padx=10, pady=10)
+        self.add_button.grid(row=2, column=3, padx=5, pady=5)
 
         self.display_table(self.members_df)
 
@@ -42,13 +53,26 @@ class MembersInterface:
         if selected_role == 'Усі ролі':
             filtered_df = self.members_df
         else:
-            filtered_df = self.members_df[self.members_df['title'] == selected_role]
+            print(self.members_df)
+            filtered_df = self.members_df[self.members_df['title_x'] == selected_role]
+        selected_faculty = self.faculty_combobox.get()
+
+        if selected_faculty == "Усі факультети":
+            filtered_fc = self.faculties_df
+        else:
+            filtered_fc = self.faculties_df[self.members_df["title_y"] == selected_faculty]
+
+        # Одночасне фільтрування за ролями та факультетами
+        # Одночасне фільтрування за ролями та факультетами
+        filtered_data = pd.merge(filtered_df, filtered_fc, how='inner', left_on='faculty', right_on='id',
+                                 suffixes=('_left', '_right'))
+
         self.table_frame.grid_forget()
-        self.display_table(filtered_df)
+        self.display_table(filtered_data)
 
     def display_table(self, data):
         self.table_frame = ttk.Frame(self.root)
-        self.table_frame.grid(row=1, column=0)
+        self.table_frame.grid(row=1, column=0, columnspan=1, sticky="nsew", rowspan=10)
         self.tree = ttk.Treeview(self.table_frame, columns=['Name', 'Surname', 'Role', 'Faculty'], show="headings",
                                  selectmode="browse")
 
@@ -134,7 +158,3 @@ class MembersInterface:
         save_button.grid(row=4, column=0, columnspan=2, padx=10, pady=10)
 
 
-root = tk.Tk()
-database = Database()
-app = MembersInterface(root, database)
-root.mainloop()
