@@ -123,13 +123,8 @@ class MembersInterface:
     def edit_member(self):
         selected_item = self.tree.focus()
         if selected_item:
-            # Отримання ID обраного члена
             member_id = int(self.tree.item(selected_item, "values")[0])
-
-            # Отримання даних про обраного члена з DataFrame
             selected_member = self.members_df[self.members_df['id_x'] == member_id].iloc[0]
-
-            # Створення вікна редагування з відповідними полями для введення даних
             edit_window = CTkToplevel(self.root)
             edit_window.title("Редагувати дані члена")
 
@@ -154,15 +149,20 @@ class MembersInterface:
             faculty_combobox.set(selected_member['title_y'])
 
             def save_changes():
-                # Отримання нових даних з полів введення
+                new_name = name_entry.get()
+                new_surname = surname_entry.get()
+
+                if any(char.isdigit() for char in new_name) or any(char.isdigit() for char in new_surname):
+                    messagebox.showerror("Помилка", "Ім'я та прізвище не повинні містити цифр.")
+                    return
+
                 updated_data = {
-                    'name': name_entry.get(),
-                    'surname': surname_entry.get(),
+                    'name': new_name,
+                    'surname': new_surname,
                     'role': self.roles_df[self.roles_df['title'] == role_combobox.get()]['id'].iloc[0],
                     'faculty': self.faculties_df[self.faculties_df['title'] == faculty_combobox.get()]['id'].iloc[0]
                 }
 
-                # Оновлення запису в базі даних
                 self.session.execute(members.update().values(name=updated_data["name"],
                                                              surname=updated_data["surname"],
                                                              role=updated_data["role"],
@@ -200,9 +200,17 @@ class MembersInterface:
         faculty_combobox.grid(row=3, column=1, padx=10, pady=5)
 
         def save_member():
+            new_name = name_entry.get()
+            new_surname = surname_entry.get()
+
+            # Перевірка, чи ім'я та прізвище не містять цифр
+            if any(char.isdigit() for char in new_name) or any(char.isdigit() for char in new_surname):
+                messagebox.showerror("Помилка", "Ім'я та прізвище не повинні містити цифр.")
+                return
+
             new_member = {
-                'name': name_entry.get(),
-                'surname': surname_entry.get(),
+                'name': new_name,
+                'surname': new_surname,
                 'role': self.roles_df[self.roles_df['title'] == role_combobox.get()]['id'].iloc[0],
                 'faculty': self.faculties_df[self.faculties_df['title'] == faculty_combobox.get()]['id'].iloc[0]
             }

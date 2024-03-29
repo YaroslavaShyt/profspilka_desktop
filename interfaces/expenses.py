@@ -141,15 +141,28 @@ class ExpensesInterface:
 
         def save_expense():
             selected_name = member_combobox.get()
+            amount = amount_entry.get()
+            purpose = purpose_entry.get()
+            year = year_entry.get()
+
+            # Перевірка, чи введено числове значення для суми та року
+            if not amount.isdigit() or not year.isdigit():
+                messagebox.showerror("Помилка", "Сума та рік повинні бути числовими значеннями.")
+                return
+
+            # Додаткова перевірка на додатність суми
+            if float(amount) <= 0:
+                messagebox.showerror("Помилка", "Сума має бути більше нуля.")
+                return
 
             id_member = self.members_df[(self.members_df['name'] == selected_name.split()[0]) &
-                                        (self.members_df['surname'] == selected_name.split()[1])]['id_x'][0]
+                                        (self.members_df['surname'] == selected_name.split()[1])]['id_x'].iloc[0]
 
+            # Додавання в базу даних та відображення успішного повідомлення
             self.session.execute(expenses.insert().values(id_member=id_member,
-                                                          amount=float(amount_entry.get()),
-                                                          purpose=purpose_entry.get(),
-                                                          year=int(year_entry.get())))
-
+                                                          amount=float(amount),
+                                                          purpose=purpose,
+                                                          year=int(year)))
             self.session.commit()
             messagebox.showinfo("Успішно", "Нові витрати були успішно додані")
             add_window.destroy()
@@ -189,10 +202,22 @@ class ExpensesInterface:
             year_entry.insert(0, str(selected_expense['year']))
 
             def save_changes():
-                self.session.execute(expenses.update().values(id_member=int(id_member_entry.get()),
-                                                              amount=float(amount_entry.get()),
-                                                              purpose=purpose_entry.get(),
-                                                              year=int(year_entry.get())).where(
+                id_member = id_member_entry.get()
+                amount = amount_entry.get()
+                purpose = purpose_entry.get()
+                year = year_entry.get()
+
+                if not (id_member.isdigit() and amount.isdigit() and year.isdigit()):
+                    messagebox.showerror("Помилка", "ID member, сума та рік повинні бути числовими значеннями.")
+                    return
+                if float(amount) <= 0:
+                    messagebox.showerror("Помилка", "Сума має бути більше нуля.")
+                    return
+
+                self.session.execute(expenses.update().values(id_member=int(id_member),
+                                                              amount=float(amount),
+                                                              purpose=purpose,
+                                                              year=int(year)).where(
                     expenses.c.id == expense_id))
                 self.session.commit()
                 messagebox.showinfo("Успішно", "Зміни були успішно збережені")
