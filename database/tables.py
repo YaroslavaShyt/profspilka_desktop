@@ -27,3 +27,15 @@ expenses = Table('expenses', metadata,
                  Column('purpose', String),
                  Column('year', Integer)
                  )
+
+leasure = Table('leasure', metadata,
+                Column('id', Integer, primary_key=True, autoincrement=True, unique=True, ),
+                Column('title', String(20)),
+                Column('year', Integer)
+                )
+
+leasure_participants = Table('leasure_participants', metadata,
+                                Column('id', Integer, primary_key=True, autoincrement=True, unique=True, ),
+                                Column('leasure_id', Integer, ForeignKey('leasure.id')),
+                                Column('participant_id', Integer, ForeignKey('members.id'))
+                             )
