@@ -1,10 +1,12 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
+from customtkinter import *
 import pandas as pd
 from sqlalchemy.orm import sessionmaker
 from database.connection_engine import Database
 from database.tables import *
 import matplotlib.pyplot as plt
+import os
 
 
 class ExpensesInterface:
@@ -14,31 +16,37 @@ class ExpensesInterface:
         self.root.title("Витрати профкому")
         Session = sessionmaker(bind=self.database.engine)
         self.session = Session()
-       # self.root.configure(bg='#0d1d1f')
+        # self.root.configure(bg='#0d1d1f')
         style = ttk.Style()
         style.configure('Green.TButton', background='DeepSkyBlue')  # Колір тексту та кнопок
 
         self.load_data()
-        self.table_label = ttk.Label(root, text="Витрати")
+        self.table_label = CTkLabel(root, text="Витрати")
         self.table_label.grid(row=0, column=0, pady=10)
 
-        self.options_label = ttk.Label(root, text="Меню")
+        self.options_label = CTkLabel(root, text="Меню")
         self.options_label.grid(row=0, column=1, pady=10)
 
-        self.sort_combobox = ttk.Combobox(root, values=['Рік', 'Сума'], style="Green.TButton")
+        self.sort_combobox = CTkComboBox(root, values=['Рік', 'Сума'], command=self.sort_table)
         self.sort_combobox.grid(row=1, column=1, padx=5, pady=5)
-        self.sort_combobox.current(0)
-        self.sort_combobox.bind("<<ComboboxSelected>>", self.sort_table)
 
-        self.delete_button = ttk.Button(root, text="Видалити", command=self.delete_expense, style="Green.TButton")
+        style = ttk.Style()
+        style.configure('Custom.Treeview.Heading', font=('Arial', 12, 'bold'))  # Зміна стилю заголовків
+        style.configure('Custom.Treeview', font=('Arial', 11), highlightthickness=0)  # Зміна стилю таблиці
+        style.layout('Custom.Treeview',
+                     [('Custom.Treeview.treearea', {'sticky': 'nswe'})])  # Визначення області таблиці
+        style.layout('Custom.Treeview.Item',
+                     [('Custom.Treeview.padding', {'sticky': 'nswe'})])  # Визначення розміщення елементів в таблиці
+
+        self.delete_button = CTkButton(root, text="Видалити", command=self.delete_expense,)
         self.delete_button.grid(row=2, column=1, padx=5, pady=5)
 
-        self.add_button = ttk.Button(root, text="Додати", command=self.add_expense, style="Green.TButton")
+        self.add_button = CTkButton(root, text="Додати", command=self.add_expense,)
         self.add_button.grid(row=1, column=2, padx=5, pady=5)
 
         self.display_table(self.expenses_df)
 
-        self.plot_button = ttk.Button(root, text="Побудувати графік", command=self.generate_plot, style="Green.TButton")
+        self.plot_button = CTkButton(root, text="Побудувати графік", command=self.generate_plot,)
         self.plot_button.grid(row=2, column=2, columnspan=4, padx=10, pady=10)
 
     def load_data(self):
@@ -57,9 +65,9 @@ class ExpensesInterface:
         self.display_table(self.expenses_df)
 
     def display_table(self, data):
-        self.table_frame = ttk.Frame(self.root, width=50, style="Green.TButton")
+        self.table_frame = CTkFrame(self.root, width=50, corner_radius=100)
         self.table_frame.grid(row=1, column=0, columnspan=1, rowspan=10, sticky="nsew")
-        self.tree = ttk.Treeview(self.table_frame,
+        self.tree = ttk.Treeview(self.table_frame, style='Custom.Treeview',
                                  columns=['Expense ID', 'Name', 'Surname', 'Faculty', 'Amount', 'Purpose', 'Year'],
                                  show="headings")
         self.tree.heading('Expense ID', text='Expense ID')
@@ -77,11 +85,10 @@ class ExpensesInterface:
         self.tree.column('Amount', minwidth=50, width=100)
         self.tree.column('Purpose', minwidth=50, width=100)
         self.tree.column('Year', minwidth=50, width=100)
-        print(self.members_df)
+
         for index, row in data.iterrows():
-            member_data = self.members_df[self.members_df['id_x'] == row['id_member']].iloc[0]
-            name = member_data['name']
-            surname = member_data['surname']
+            name = row['name']
+            surname = row['surname']
             faculty = row['title']
             self.tree.insert("", "end",
                              values=[row['id'], name, surname, faculty, row['amount'], row['purpose'], row['year']])
@@ -106,30 +113,39 @@ class ExpensesInterface:
                     self.display_table(self.expenses_df)
 
     def add_expense(self):
-        add_window = tk.Toplevel(self.root)
+        add_window = CTkToplevel(self.root)
         add_window.title("Додати витрати")
 
-        tk.Label(add_window, text="ID Member:").grid(row=0, column=0, padx=10, pady=5)
-        id_member_entry = tk.Entry(add_window)
-        id_member_entry.grid(row=0, column=1, padx=10, pady=5)
+        CTkLabel(add_window, text="Член:").grid(row=0, column=0, padx=10, pady=5)
 
-        tk.Label(add_window, text="Amount:").grid(row=1, column=0, padx=10, pady=5)
-        amount_entry = tk.Entry(add_window)
+        # Заповнення комбобоксу іменами та прізвищами членів
+        members_names = self.members_df['name'] + ' ' + self.members_df['surname']
+        member_combobox = CTkComboBox(add_window, values=members_names)
+        member_combobox.grid(row=0, column=1, padx=10, pady=5)
+
+        CTkLabel(add_window, text="Сума:").grid(row=1, column=0, padx=10, pady=5)
+        amount_entry = CTkEntry(add_window)
         amount_entry.grid(row=1, column=1, padx=10, pady=5)
 
-        tk.Label(add_window, text="Purpose:").grid(row=2, column=0, padx=10, pady=5)
-        purpose_entry = tk.Entry(add_window)
+        CTkLabel(add_window, text="Призначення:").grid(row=2, column=0, padx=10, pady=5)
+        purpose_entry = CTkEntry(add_window)
         purpose_entry.grid(row=2, column=1, padx=10, pady=5)
 
-        tk.Label(add_window, text="Year:").grid(row=3, column=0, padx=10, pady=5)
-        year_entry = tk.Entry(add_window)
+        CTkLabel(add_window, text="Рік:").grid(row=3, column=0, padx=10, pady=5)
+        year_entry = CTkEntry(add_window)
         year_entry.grid(row=3, column=1, padx=10, pady=5)
 
         def save_expense():
-            self.session.execute(expenses.insert().values(id_member=int(id_member_entry.get()),
-                                   amount=float(amount_entry.get()),
-                                   purpose=purpose_entry.get(),
-                                   year=int(year_entry.get())))
+
+            selected_name = member_combobox.get()
+
+            id_member = self.members_df[(self.members_df['name'] == selected_name.split()[0]) &
+                                       (self.members_df['surname'] == selected_name.split()[1])]['id_x'][0]
+
+            self.session.execute(expenses.insert().values(id_member=id_member,
+                                                          amount=float(amount_entry.get()),
+                                                          purpose=purpose_entry.get(),
+                                                          year=int(year_entry.get())))
 
             self.session.commit()
             messagebox.showinfo("Успішно", "Нові витрати були успішно додані")
@@ -137,7 +153,7 @@ class ExpensesInterface:
             self.load_data()
             self.display_table(self.expenses_df)
 
-        save_button = ttk.Button(add_window, text="Зберегти", command=save_expense)
+        save_button = CTkButton(add_window, text="Зберегти", command=save_expense)
         save_button.grid(row=4, column=0, columnspan=2, padx=10, pady=10)
 
     def generate_plot(self):
@@ -149,14 +165,18 @@ class ExpensesInterface:
         plt.ylabel('Загальні витрати')
         plt.title('Загальні витрати за роками')
 
-        # Графік витрат за категоріями
         categories_data = self.expenses_df.groupby('purpose')['amount'].sum()
         plt.subplot(1, 2, 2)
         plt.pie(categories_data.values, labels=categories_data.index, autopct='%1.1f%%')
         plt.axis('equal')
         plt.title('Витрати за категоріями')
-
         plt.tight_layout()
-        plt.show()
+
+        directory = "../plots"
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+        plt.savefig(os.path.join(directory, "expenses_plot.png"))
+
+        messagebox.showinfo("Успіх", "Графік успішно згенеровано та збережено у папці 'plots'!")
 
 

@@ -1,4 +1,5 @@
 import tkinter as tk
+from customtkinter import *
 from tkinter import ttk, messagebox
 import pandas as pd
 from sqlalchemy.orm import sessionmaker
@@ -17,26 +18,29 @@ class MembersInterface:
         style.configure('Green.TButton', background='DeepSkyBlue')  # Колір тексту та кнопок
 
         self.load_data()
-        self.table_label = ttk.Label(root, text="Члени профкому")
+        self.table_label = CTkLabel(root, text="Члени профкому")
         self.table_label.grid(row=0, column=0, pady=10)
 
-        self.options_label = ttk.Label(root, text="Меню")
+        style = ttk.Style()
+        style.configure('Custom.Treeview', font=('Arial', 11), highlightthickness=0)  # Зміна стилю таблиці
+        style.layout('Custom.Treeview',
+                     [('Custom.Treeview.treearea', {'sticky': 'nswe'})])  # Визначення області таблиці
+        style.layout('Custom.Treeview.Item',
+                     [('Custom.Treeview.padding', {'sticky': 'nswe'})])  # Визначення розміщення елементів в таблиці
+
+        self.options_label = CTkLabel(root, text="Меню")
         self.options_label.grid(row=0, column=1, columnspan=3, pady=10)
 
-        self.role_combobox = ttk.Combobox(root, values=self.role_options, style="Green.TButton")
+        self.role_combobox = CTkComboBox(root, values=self.role_options, command=self.update_table)
         self.role_combobox.grid(row=1, column=2, padx=5, pady=5)
-        self.role_combobox.current(0)
-        self.role_combobox.bind("<<ComboboxSelected>>", self.update_table)
 
-        self.faculty_combobox = ttk.Combobox(root, values=self.faculties_options, style="Green.TButton")
+        self.faculty_combobox = CTkComboBox(root, values=self.faculties_options, command=self.update_table)
         self.faculty_combobox.grid(row=2, column=2, padx=5, pady=5)
-        self.faculty_combobox.current(0)
-        self.faculty_combobox.bind("<<ComboboxSelected>>", self.update_table)
 
-        self.delete_button = ttk.Button(root, text="Видалити", command=self.delete_member, style="Green.TButton")
+        self.delete_button = CTkButton(root, text="Видалити", command=self.delete_member,)
         self.delete_button.grid(row=1, column=3, padx=5, pady=5)
 
-        self.add_button = ttk.Button(root, text="Додати", command=self.add_member, style="Green.TButton")
+        self.add_button = CTkButton(root, text="Додати", command=self.add_member, )
         self.add_button.grid(row=2, column=3, padx=5, pady=5)
 
         self.display_table(self.members_df)
@@ -64,8 +68,6 @@ class MembersInterface:
         else:
             filtered_fc = self.faculties_df[self.members_df["title_y"] == selected_faculty]
 
-        # Одночасне фільтрування за ролями та факультетами
-        # Одночасне фільтрування за ролями та факультетами
         filtered_data = pd.merge(filtered_df, filtered_fc, how='inner', left_on='faculty', right_on='id',
                                  suffixes=('_left', '_right'))
 
@@ -73,19 +75,19 @@ class MembersInterface:
         self.display_table(filtered_data)
 
     def display_table(self, data):
-        self.table_frame = ttk.Frame(self.root, style="Green.TButton")
+        self.table_frame = CTkFrame(self.root)
         self.table_frame.grid(row=1, column=0, columnspan=1, sticky="nsew", rowspan=10)
-        self.tree = ttk.Treeview(self.table_frame, columns=['Name', 'Surname', 'Role', 'Faculty'], show="headings",
-                                 selectmode="browse")
+        self.tree = ttk.Treeview(self.table_frame, columns=['ID', 'Name', 'Surname', 'Role', 'Faculty'], show="headings",
+                                 selectmode="browse", style='Custom.Treeview')
 
-        # Нові назви стовпців
+        self.tree.heading('ID', text='ID')
         self.tree.heading('Name', text='Ім\'я')
         self.tree.heading('Surname', text='Прізвище')
         self.tree.heading('Role', text='Роль')
         self.tree.heading('Faculty', text='Факультет')
 
         for index, row in data.iterrows():
-            # Отримання назви ролі за її id з датафрейму self.roles_df
+            member_id = row["id_x"]
             role_id = row['role']
             role_title = self.roles_df[self.roles_df['id'] == role_id]['title'].iloc[0]
 
@@ -93,10 +95,10 @@ class MembersInterface:
             faculty_title = row['title_y']
 
             # Вставка рядка в таблицю з відповідними значеннями
-            self.tree.insert("", "end", values=[row['name'], row['surname'], role_title, faculty_title])
+            self.tree.insert("", "end", values=[member_id, row['name'], row['surname'], role_title, faculty_title])
 
         self.tree.pack(side="left", fill="both", expand=True)
-        scrollbar = ttk.Scrollbar(self.table_frame, orient="vertical", command=self.tree.yview)
+        scrollbar = CTkScrollbar(self.table_frame, orientation="vertical", command=self.tree.yview)
         scrollbar.pack(side="right", fill="y")
         self.tree.configure(yscrollcommand=scrollbar.set)
 
@@ -116,27 +118,25 @@ class MembersInterface:
 
     def add_member(self):
         # Створення нового вікна для введення даних нового члена
-        add_window = tk.Toplevel(self.root)
+        add_window = CTkToplevel(self.root)
         add_window.title("Додати нового члена")
 
         # Написи та поля для введення даних
-        tk.Label(add_window, text="Ім'я:").grid(row=0, column=0, padx=10, pady=5)
-        name_entry = tk.Entry(add_window)
+        CTkLabel(add_window, text="Ім'я:").grid(row=0, column=0, padx=10, pady=5)
+        name_entry = CTkEntry(add_window)
         name_entry.grid(row=0, column=1, padx=10, pady=5)
 
-        tk.Label(add_window, text="Прізвище:").grid(row=1, column=0, padx=10, pady=5)
-        surname_entry = tk.Entry(add_window)
+        CTkLabel(add_window, text="Прізвище:").grid(row=1, column=0, padx=10, pady=5)
+        surname_entry = CTkEntry(add_window)
         surname_entry.grid(row=1, column=1, padx=10, pady=5)
 
-        tk.Label(add_window, text="Роль:").grid(row=2, column=0, padx=10, pady=5)
-        role_combobox = ttk.Combobox(add_window, values=self.role_options)
+        CTkLabel(add_window, text="Роль:").grid(row=2, column=0, padx=10, pady=5)
+        role_combobox = CTkComboBox(add_window, values=self.role_options,)
         role_combobox.grid(row=2, column=1, padx=10, pady=5)
-        role_combobox.current(0)
 
-        tk.Label(add_window, text="Факультет:").grid(row=3, column=0, padx=10, pady=5)
-        faculty_combobox = ttk.Combobox(add_window, values=self.faculties_options)
+        CTkLabel(add_window, text="Факультет:").grid(row=3, column=0, padx=10, pady=5)
+        faculty_combobox = CTkComboBox(add_window, values=self.faculties_options)
         faculty_combobox.grid(row=3, column=1, padx=10, pady=5)
-        faculty_combobox.current(0)
 
         def save_member():
             new_member = {
@@ -155,8 +155,7 @@ class MembersInterface:
             self.load_data()
             self.update_table()
 
-        # Кнопка для збереження нового члена
-        save_button = ttk.Button(add_window, text="Зберегти", command=save_member)
+        save_button = CTkButton(add_window, text="Зберегти", command=save_member)
         save_button.grid(row=4, column=0, columnspan=2, padx=10, pady=10)
 
 
