@@ -74,13 +74,13 @@ class ExpensesInterface:
         self.tree = ttk.Treeview(self.table_frame, style='Custom.Treeview',
                                  columns=['Expense ID', 'Name', 'Surname', 'Faculty', 'Amount', 'Purpose', 'Year'],
                                  show="headings")
-        self.tree.heading('Expense ID', text='Expense ID')
-        self.tree.heading('Name', text='Name')
-        self.tree.heading('Surname', text='Surname')
-        self.tree.heading('Faculty', text='Faculty')
-        self.tree.heading('Amount', text='Amount')
-        self.tree.heading('Purpose', text='Purpose')
-        self.tree.heading('Year', text='Year')
+        self.tree.heading('Expense ID', text='ID')
+        self.tree.heading('Name', text='Ім\'я')
+        self.tree.heading('Surname', text='Прізвище')
+        self.tree.heading('Faculty', text='Факультет')
+        self.tree.heading('Amount', text='Кількість')
+        self.tree.heading('Purpose', text='Мета')
+        self.tree.heading('Year', text='Рік')
 
         self.tree.column('Expense ID', minwidth=50, width=100)
         self.tree.column('Name', minwidth=50, width=100)
