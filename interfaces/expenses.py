@@ -18,17 +18,12 @@ class ExpensesInterface:
         self.session = Session()
         # self.root.configure(bg='#0d1d1f')
         style = ttk.Style()
-        style.configure('Green.TButton', background='DeepSkyBlue')  # Колір тексту та кнопок
+        style.configure('Green.TButton', background='DeepSkyBlue')
 
         self.load_data()
-        self.table_label = CTkLabel(root, text="Витрати")
-        self.table_label.grid(row=0, column=0, pady=10)
-
-        self.options_label = CTkLabel(root, text="Меню")
-        self.options_label.grid(row=0, column=1, pady=10)
 
         self.sort_combobox = CTkComboBox(root, values=['Рік', 'Сума'], command=self.sort_table)
-        self.sort_combobox.grid(row=1, column=1, padx=5, pady=5)
+        self.sort_combobox.grid(row=1, column=3, padx=5, pady=5)
 
         style = ttk.Style()
         style.configure('Custom.Treeview.Heading', font=('Arial', 12, 'bold'))  # Зміна стилю заголовків
@@ -38,16 +33,25 @@ class ExpensesInterface:
         style.layout('Custom.Treeview.Item',
                      [('Custom.Treeview.padding', {'sticky': 'nswe'})])  # Визначення розміщення елементів в таблиці
 
-        self.delete_button = CTkButton(root, text="Видалити", command=self.delete_expense,)
-        self.delete_button.grid(row=2, column=1, padx=5, pady=5)
+        self.delete_button = CTkButton(root, text="Видалити", command=self.delete_expense, )
+        self.delete_button.grid(row=2, column=4, padx=5, pady=5)
 
-        self.add_button = CTkButton(root, text="Додати", command=self.add_expense,)
-        self.add_button.grid(row=1, column=2, padx=5, pady=5)
+        self.add_button = CTkButton(root, text="Додати", command=self.add_expense, )
+        self.add_button.grid(row=2, column=3, padx=5, pady=5)
+
+        self.search_entry = CTkEntry(root, width=300)
+        self.search_entry.grid(row=0, column=0, padx=5, pady=5)
+
+        self.search_button = CTkButton(root, text="Пошук", command=self.search_expense)
+        self.search_button.grid(row=0, column=1, padx=5, pady=5)
+
+        self.edit_button = CTkButton(root, text="Редагувати", command=self.edit_expense)
+        self.edit_button.grid(row=3, column=4, padx=5, pady=5)
 
         self.display_table(self.expenses_df)
 
-        self.plot_button = CTkButton(root, text="Побудувати графік", command=self.generate_plot,)
-        self.plot_button.grid(row=2, column=2, columnspan=4, padx=10, pady=10)
+        self.plot_button = CTkButton(root, text="Побудувати графік", command=self.generate_plot, )
+        self.plot_button.grid(row=3, column=3, padx=10, pady=10)
 
     def load_data(self):
         self.expenses_df = pd.read_sql_table('expenses', con=self.database.engine)
@@ -66,7 +70,7 @@ class ExpensesInterface:
 
     def display_table(self, data):
         self.table_frame = CTkFrame(self.root, width=50, corner_radius=100)
-        self.table_frame.grid(row=1, column=0, columnspan=1, rowspan=10, sticky="nsew")
+        self.table_frame.grid(row=1, column=0, columnspan=2, rowspan=10, sticky="nsew")
         self.tree = ttk.Treeview(self.table_frame, style='Custom.Treeview',
                                  columns=['Expense ID', 'Name', 'Surname', 'Faculty', 'Amount', 'Purpose', 'Year'],
                                  show="headings")
@@ -136,11 +140,10 @@ class ExpensesInterface:
         year_entry.grid(row=3, column=1, padx=10, pady=5)
 
         def save_expense():
-
             selected_name = member_combobox.get()
 
             id_member = self.members_df[(self.members_df['name'] == selected_name.split()[0]) &
-                                       (self.members_df['surname'] == selected_name.split()[1])]['id_x'][0]
+                                        (self.members_df['surname'] == selected_name.split()[1])]['id_x'][0]
 
             self.session.execute(expenses.insert().values(id_member=id_member,
                                                           amount=float(amount_entry.get()),
@@ -155,6 +158,50 @@ class ExpensesInterface:
 
         save_button = CTkButton(add_window, text="Зберегти", command=save_expense)
         save_button.grid(row=4, column=0, columnspan=2, padx=10, pady=10)
+
+    def edit_expense(self):
+        selected_item = self.tree.focus()
+        if selected_item:
+            edit_window = CTkToplevel(self.root)
+            edit_window.title("Редагувати витрати")
+
+            expense_id = int(self.tree.item(selected_item, "values")[0])
+            selected_expense = self.expenses_df[self.expenses_df['id'] == expense_id].iloc[0]
+
+            CTkLabel(edit_window, text="ID Member:").grid(row=0, column=0, padx=10, pady=5)
+            id_member_entry = CTkEntry(edit_window)
+            id_member_entry.grid(row=0, column=1, padx=10, pady=5)
+            id_member_entry.insert(0, str(selected_expense['id_member']))
+
+            CTkLabel(edit_window, text="Amount:").grid(row=1, column=0, padx=10, pady=5)
+            amount_entry = CTkEntry(edit_window)
+            amount_entry.grid(row=1, column=1, padx=10, pady=5)
+            amount_entry.insert(0, str(selected_expense['amount']))
+
+            CTkLabel(edit_window, text="Purpose:").grid(row=2, column=0, padx=10, pady=5)
+            purpose_entry = CTkEntry(edit_window)
+            purpose_entry.grid(row=2, column=1, padx=10, pady=5)
+            purpose_entry.insert(0, selected_expense['purpose'])
+
+            CTkLabel(edit_window, text="Year:").grid(row=3, column=0, padx=10, pady=5)
+            year_entry = CTkEntry(edit_window)
+            year_entry.grid(row=3, column=1, padx=10, pady=5)
+            year_entry.insert(0, str(selected_expense['year']))
+
+            def save_changes():
+                self.session.execute(expenses.update().values(id_member=int(id_member_entry.get()),
+                                                              amount=float(amount_entry.get()),
+                                                              purpose=purpose_entry.get(),
+                                                              year=int(year_entry.get())).where(
+                    expenses.c.id == expense_id))
+                self.session.commit()
+                messagebox.showinfo("Успішно", "Зміни були успішно збережені")
+                edit_window.destroy()
+                self.load_data()
+                self.display_table(self.expenses_df)
+
+            save_button = CTkButton(edit_window, text="Зберегти", command=save_changes)
+            save_button.grid(row=4, column=0, columnspan=2, padx=10, pady=10)
 
     def generate_plot(self):
         grouped_data = self.expenses_df.groupby('year')['amount'].sum()
@@ -179,4 +226,18 @@ class ExpensesInterface:
 
         messagebox.showinfo("Успіх", "Графік успішно згенеровано та збережено у папці 'plots'!")
 
+    def search_expense(self):
+        search_query = self.search_entry.get().strip()
 
+        if search_query:
+
+            filtered_data = self.expenses_df[self.expenses_df['purpose'].str.contains(search_query, case=False) |
+                                             self.expenses_df['name'].str.contains(search_query, case=False) |
+                                             self.expenses_df['surname'].str.contains(search_query, case=False) |
+                                             self.expenses_df['title'].str.contains(search_query, case=False)
+                                             ]
+            self.table_frame.grid_forget()
+            self.display_table(filtered_data)
+        else:
+            self.table_frame.grid_forget()
+            self.display_table(self.expenses_df)
